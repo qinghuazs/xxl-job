@@ -15,5 +15,4 @@ public class ExecutorRouteLast extends ExecutorRouter {
     public ReturnT<String> route(TriggerParam triggerParam, List<String> addressList) {
         return new ReturnT<String>(addressList.get(addressList.size()-1));
     }
-
 }

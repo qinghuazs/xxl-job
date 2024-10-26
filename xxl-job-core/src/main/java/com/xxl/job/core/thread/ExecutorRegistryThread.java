@@ -11,22 +11,24 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by xuxueli on 17/3/2.
+ * 执行器注册线程，线程的实现方式和JobLogFileCleanThread一直，主要是业务逻辑不一行
  */
 public class ExecutorRegistryThread {
     private static Logger logger = LoggerFactory.getLogger(ExecutorRegistryThread.class);
 
     private static ExecutorRegistryThread instance = new ExecutorRegistryThread();
-    public static ExecutorRegistryThread getInstance(){
+
+    public static ExecutorRegistryThread getInstance() {
         return instance;
     }
 
     private Thread registryThread;
     private volatile boolean toStop = false;
-    public void start(final String appname, final String address){
+
+    public void start(final String appname, final String address) {
 
         // valid
-        if (appname==null || appname.trim().length()==0) {
+        if (appname == null || appname.trim().length() == 0) {
             logger.warn(">>>>>>>>>>> xxl-job, executor registry config fail, appname is null.");
             return;
         }
@@ -39,14 +41,14 @@ public class ExecutorRegistryThread {
             @Override
             public void run() {
 
-                // registry
+                // 注册保活
                 while (!toStop) {
                     try {
                         RegistryParam registryParam = new RegistryParam(RegistryConfig.RegistType.EXECUTOR.name(), appname, address);
-                        for (AdminBiz adminBiz: XxlJobExecutor.getAdminBizList()) {
+                        for (AdminBiz adminBiz : XxlJobExecutor.getAdminBizList()) {
                             try {
                                 ReturnT<String> registryResult = adminBiz.registry(registryParam);
-                                if (registryResult!=null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
+                                if (registryResult != null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
                                     registryResult = ReturnT.SUCCESS;
                                     logger.debug(">>>>>>>>>>> xxl-job registry success, registryParam:{}, registryResult:{}", new Object[]{registryParam, registryResult});
                                     break;
@@ -62,11 +64,11 @@ public class ExecutorRegistryThread {
                         if (!toStop) {
                             logger.error(e.getMessage(), e);
                         }
-
                     }
 
                     try {
                         if (!toStop) {
+                            //30秒一次心跳
                             TimeUnit.SECONDS.sleep(RegistryConfig.BEAT_TIMEOUT);
                         }
                     } catch (InterruptedException e) {
@@ -76,13 +78,13 @@ public class ExecutorRegistryThread {
                     }
                 }
 
-                // registry remove
+                //while循环终止后才会走到这里，while循环终止代表调用了 toStop 方法，需要终止线程的执行，那么就不再保活了，这里主动去做了一个注销
                 try {
                     RegistryParam registryParam = new RegistryParam(RegistryConfig.RegistType.EXECUTOR.name(), appname, address);
-                    for (AdminBiz adminBiz: XxlJobExecutor.getAdminBizList()) {
+                    for (AdminBiz adminBiz : XxlJobExecutor.getAdminBizList()) {
                         try {
                             ReturnT<String> registryResult = adminBiz.registryRemove(registryParam);
-                            if (registryResult!=null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
+                            if (registryResult != null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
                                 registryResult = ReturnT.SUCCESS;
                                 logger.info(">>>>>>>>>>> xxl-job registry-remove success, registryParam:{}, registryResult:{}", new Object[]{registryParam, registryResult});
                                 break;
@@ -93,7 +95,6 @@ public class ExecutorRegistryThread {
                             if (!toStop) {
                                 logger.info(">>>>>>>>>>> xxl-job registry-remove error, registryParam:{}", registryParam, e);
                             }
-
                         }
 
                     }
@@ -103,7 +104,6 @@ public class ExecutorRegistryThread {
                     }
                 }
                 logger.info(">>>>>>>>>>> xxl-job, executor registry thread destroy.");
-
             }
         });
         registryThread.setDaemon(true);
@@ -113,7 +113,6 @@ public class ExecutorRegistryThread {
 
     public void toStop() {
         toStop = true;
-
         // interrupt and wait
         if (registryThread != null) {
             registryThread.interrupt();
@@ -123,7 +122,6 @@ public class ExecutorRegistryThread {
                 logger.error(e.getMessage(), e);
             }
         }
-
     }
 
 }

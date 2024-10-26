@@ -15,7 +15,7 @@ public interface AdminBiz {
     // ---------------------- callback ----------------------
 
     /**
-     * callback
+     * 回调接口
      *
      * @param callbackParamList
      * @return
@@ -26,23 +26,19 @@ public interface AdminBiz {
     // ---------------------- registry ----------------------
 
     /**
-     * registry
+     * 注册执行器
      *
      * @param registryParam
      * @return
      */
-    public ReturnT<String> registry(RegistryParam registryParam);
+    ReturnT<String> registry(RegistryParam registryParam);
 
     /**
-     * registry remove
+     * 下线（取消注册）
      *
      * @param registryParam
      * @return
      */
-    public ReturnT<String> registryRemove(RegistryParam registryParam);
-
-
-    // ---------------------- biz (custome) ----------------------
-    // group、job ... manage
+    ReturnT<String> registryRemove(RegistryParam registryParam);
 
 }

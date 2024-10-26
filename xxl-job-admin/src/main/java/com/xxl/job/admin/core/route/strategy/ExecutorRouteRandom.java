@@ -19,5 +19,4 @@ public class ExecutorRouteRandom extends ExecutorRouter {
         String address = addressList.get(localRandom.nextInt(addressList.size()));
         return new ReturnT<String>(address);
     }
-
 }

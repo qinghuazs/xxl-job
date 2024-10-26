@@ -3,15 +3,26 @@ package com.xxl.job.core.biz.model;
 import java.io.Serializable;
 
 /**
- * Created by xuxueli on 17/3/2.
+ * 用于封装任务执行后的回调参数。当一个任务在执行器上执行完毕后，执行器会将任务的执行结果通过回调机制发送给调度中心（Admin），这个过程中就会用到 HandleCallbackParam 类来传递回调信息。
  */
 public class HandleCallbackParam implements Serializable {
     private static final long serialVersionUID = 42L;
 
+    /**
+     * 任务日志的唯一标识符，用于在调度中心（Admin）中唯一确定一个任务执行日志记录。
+     */
     private long logId;
+    /**
+     * 任务的触发时间，通常是一个时间戳，表示任务何时被触发执行。
+     */
     private long logDateTim;
-
+    /**
+     * 处理结果 code
+     */
     private int handleCode;
+    /**
+     *  处理结果信息
+     */
     private String handleMsg;
 
     public HandleCallbackParam(){}

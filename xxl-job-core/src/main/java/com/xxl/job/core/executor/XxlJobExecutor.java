@@ -29,13 +29,37 @@ public class XxlJobExecutor  {
     private static final Logger logger = LoggerFactory.getLogger(XxlJobExecutor.class);
 
     // ---------------------- param ----------------------
+    /**
+     * 调度中心地址
+     */
     private String adminAddresses;
+    /**
+     * 访问token
+     */
     private String accessToken;
+    /**
+     * 应用名称
+     */
     private String appname;
+    /**
+     * 本级的地址，如果配置了address则忽略IP和port的配置
+     */
     private String address;
+    /**
+     * IP地址
+     */
     private String ip;
+    /**
+     * 端口
+     */
     private int port;
+    /**
+     * 日志路径
+     */
     private String logPath;
+    /**
+     * 日志保留天数
+     */
     private int logRetentionDays;
 
     public void setAdminAddresses(String adminAddresses) {
@@ -66,13 +90,11 @@ public class XxlJobExecutor  {
 
     // ---------------------- start + stop ----------------------
     public void start() throws Exception {
-
         // init logpath
         XxlJobFileAppender.initLogPath(logPath);
 
         // init invoker, admin-client
         initAdminBizList(adminAddresses, accessToken);
-
 
         // init JobLogFileCleanThread
         JobLogFileCleanThread.getInstance().start(logRetentionDays);
@@ -111,7 +133,6 @@ public class XxlJobExecutor  {
 
         // destroy TriggerCallbackThread
         TriggerCallbackThread.getInstance().toStop();
-
     }
 
 
@@ -132,22 +153,19 @@ public class XxlJobExecutor  {
             }
         }
     }
-
     public static List<AdminBiz> getAdminBizList(){
         return adminBizList;
     }
 
     // ---------------------- executor-server (rpc provider) ----------------------
     private EmbedServer embedServer = null;
-
     private void initEmbedServer(String address, String ip, int port, String appname, String accessToken) throws Exception {
-
-        // fill ip port
-        port = port>0?port: NetUtil.findAvailablePort(9999);
-        ip = (ip!=null&&ip.trim().length()>0)?ip: IpUtil.getIp();
-
         // generate address
         if (address==null || address.trim().length()==0) {
+            // fill ip port
+            ip = (ip!=null&&ip.trim().length()>0)?ip: IpUtil.getIp();
+            port = port>0?port: NetUtil.findAvailablePort(9999);
+
             String ip_port_address = IpUtil.getIpPort(ip, port);   // registry-address：default use address to registry , otherwise use ip:port if address is null
             address = "http://{ip_port}/".replace("{ip_port}", ip_port_address);
         }
@@ -161,7 +179,6 @@ public class XxlJobExecutor  {
         embedServer = new EmbedServer();
         embedServer.start(address, port, appname, accessToken);
     }
-
     private void stopEmbedServer() {
         // stop provider factory
         if (embedServer != null) {

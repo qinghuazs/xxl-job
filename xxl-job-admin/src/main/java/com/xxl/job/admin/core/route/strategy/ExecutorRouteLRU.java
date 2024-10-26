@@ -19,18 +19,25 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ExecutorRouteLRU extends ExecutorRouter {
 
+    /**
+     * key jobId
+     * value ： map   key address    value address
+     */
     private static ConcurrentMap<Integer, LinkedHashMap<String, String>> jobLRUMap = new ConcurrentHashMap<Integer, LinkedHashMap<String, String>>();
+    /**
+     * 缓存失效时间
+     */
     private static long CACHE_VALID_TIME = 0;
 
     public String route(int jobId, List<String> addressList) {
-
-        // cache clear
+        // 清理缓存
         if (System.currentTimeMillis() > CACHE_VALID_TIME) {
             jobLRUMap.clear();
             CACHE_VALID_TIME = System.currentTimeMillis() + 1000*60*60*24;
         }
 
         // init lru
+        //key address  value address
         LinkedHashMap<String, String> lruItem = jobLRUMap.get(jobId);
         if (lruItem == null) {
             /**
@@ -41,14 +48,13 @@ public class ExecutorRouteLRU extends ExecutorRouter {
             lruItem = new LinkedHashMap<String, String>(16, 0.75f, true);
             jobLRUMap.putIfAbsent(jobId, lruItem);
         }
-
-        // put new
+        // put new   初始化所有地址到lruItem中
         for (String address: addressList) {
             if (!lruItem.containsKey(address)) {
                 lruItem.put(address, address);
             }
         }
-        // remove old
+        // remove old   移除缓存中已失效的地址
         List<String> delKeys = new ArrayList<>();
         for (String existKey: lruItem.keySet()) {
             if (!addressList.contains(existKey)) {
@@ -61,7 +67,7 @@ public class ExecutorRouteLRU extends ExecutorRouter {
             }
         }
 
-        // load
+        // load   取lruItem中第一个数据，因为accessOrder设置为true，每次被访问的数据都会放到链表的末尾，所以链表头节点就是最近最少使用的那条数据
         String eldestKey = lruItem.entrySet().iterator().next().getKey();
         String eldestValue = lruItem.get(eldestKey);
         return eldestValue;
@@ -72,5 +78,4 @@ public class ExecutorRouteLRU extends ExecutorRouter {
         String address = route(triggerParam.getJobId(), addressList);
         return new ReturnT<String>(address);
     }
-
 }

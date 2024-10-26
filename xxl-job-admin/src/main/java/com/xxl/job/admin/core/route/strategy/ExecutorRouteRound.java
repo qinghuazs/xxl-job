@@ -42,5 +42,4 @@ public class ExecutorRouteRound extends ExecutorRouter {
         String address = addressList.get(count(triggerParam.getJobId())%addressList.size());
         return new ReturnT<String>(address);
     }
-
 }

@@ -28,8 +28,7 @@ public class JobLogFileCleanThread {
     private Thread localThread;
     private volatile boolean toStop = false;
     public void start(final long logRetentionDays){
-
-        // limit min value
+        //限制最小值为 3
         if (logRetentionDays < 3 ) {
             return;
         }
@@ -42,7 +41,6 @@ public class JobLogFileCleanThread {
                         // clean log dir, over logRetentionDays
                         File[] childDirs = new File(XxlJobFileAppender.getLogPath()).listFiles();
                         if (childDirs!=null && childDirs.length>0) {
-
                             // today
                             Calendar todayCal = Calendar.getInstance();
                             todayCal.set(Calendar.HOUR_OF_DAY,0);
@@ -61,7 +59,6 @@ public class JobLogFileCleanThread {
                                 if (childFile.getName().indexOf("-") == -1) {
                                     continue;
                                 }
-
                                 // file create date
                                 Date logFileCreateDate = null;
                                 try {
@@ -73,21 +70,18 @@ public class JobLogFileCleanThread {
                                 if (logFileCreateDate == null) {
                                     continue;
                                 }
-
                                 if ((todayDate.getTime()-logFileCreateDate.getTime()) >= logRetentionDays * (24 * 60 * 60 * 1000) ) {
                                     FileUtil.deleteRecursively(childFile);
                                 }
 
                             }
                         }
-
                     } catch (Exception e) {
                         if (!toStop) {
                             logger.error(e.getMessage(), e);
                         }
 
                     }
-
                     try {
                         TimeUnit.DAYS.sleep(1);
                     } catch (InterruptedException e) {
@@ -97,7 +91,6 @@ public class JobLogFileCleanThread {
                     }
                 }
                 logger.info(">>>>>>>>>>> xxl-job, executor JobLogFileCleanThread thread destroy.");
-
             }
         });
         localThread.setDaemon(true);
@@ -112,9 +105,10 @@ public class JobLogFileCleanThread {
             return;
         }
 
-        // interrupt and wait
+        //interrupt会请求线程终止，将线程的中断状态设置为 true，该方法不会强制停止线程执行
         localThread.interrupt();
         try {
+            //等待线程终止，这里是为了阻塞调用toStop的线程，保证 localThread 完成工作后，再继续往下走
             localThread.join();
         } catch (InterruptedException e) {
             logger.error(e.getMessage(), e);

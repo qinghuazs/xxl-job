@@ -19,6 +19,9 @@ import java.util.TreeMap;
  */
 public class ExecutorRouteConsistentHash extends ExecutorRouter {
 
+    /**
+     * 每个执行器都定义100个虚拟节点
+     */
     private static int VIRTUAL_NODE_NUM = 100;
 
     /**
@@ -61,15 +64,19 @@ public class ExecutorRouteConsistentHash extends ExecutorRouter {
         // ------A1------A2-------A3------
         // -----------J1------------------
         TreeMap<Long, String> addressRing = new TreeMap<Long, String>();
+        //将每个执行器的地址虚拟化100个节点，放入到addressRing中
         for (String address: addressList) {
             for (int i = 0; i < VIRTUAL_NODE_NUM; i++) {
                 long addressHash = hash("SHARD-" + address + "-NODE-" + i);
                 addressRing.put(addressHash, address);
             }
         }
-
+        //根据 JobId 计算 hash 值
         long jobHash = hash(String.valueOf(jobId));
+        // 获取 KEY 大于等于指定key的部分数据
         SortedMap<Long, String> lastRing = addressRing.tailMap(jobHash);
+        // 如果取不到大于等于 hash(jobId) 的数据，则表示在环中节点的位置位于0和1之间，所以取第一个节点即可
+        // 如果有大于等于 hash(jobId) 的数据，则子集合SortedMap中第一个节点，lastRing.firstKey()是子集合中第一个节点的key
         if (!lastRing.isEmpty()) {
             return lastRing.get(lastRing.firstKey());
         }
@@ -81,5 +88,4 @@ public class ExecutorRouteConsistentHash extends ExecutorRouter {
         String address = hashJob(triggerParam.getJobId(), addressList);
         return new ReturnT<String>(address);
     }
-
 }

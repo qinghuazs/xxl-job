@@ -41,8 +41,6 @@ public class ExecutorRouteBusyover extends ExecutorRouter {
                 return idleBeatResult;
             }
         }
-
         return new ReturnT<String>(ReturnT.FAIL_CODE, idleBeatResultSB.toString());
     }
-
 }

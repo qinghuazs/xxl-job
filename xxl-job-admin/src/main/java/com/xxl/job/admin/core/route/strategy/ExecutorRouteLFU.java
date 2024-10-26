@@ -17,31 +17,42 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ExecutorRouteLFU extends ExecutorRouter {
 
+    /**
+     * key jobId
+     * value job使用过的执行器地址和使用次数的map
+     */
     private static ConcurrentMap<Integer, HashMap<String, Integer>> jobLfuMap = new ConcurrentHashMap<Integer, HashMap<String, Integer>>();
+    /**
+     * 缓存的时间，目前是24小时清理缓存
+     */
     private static long CACHE_VALID_TIME = 0;
 
     public String route(int jobId, List<String> addressList) {
-
-        // cache clear
+        //缓存24小时失效
         if (System.currentTimeMillis() > CACHE_VALID_TIME) {
             jobLfuMap.clear();
             CACHE_VALID_TIME = System.currentTimeMillis() + 1000*60*60*24;
         }
 
         // lfu item init
-        HashMap<String, Integer> lfuItemMap = jobLfuMap.get(jobId);     // Key排序可以用TreeMap+构造入参Compare；Value排序暂时只能通过ArrayList；
+        // Key排序可以用TreeMap+构造入参Compare；Value排序暂时只能通过ArrayList；
+        // key：执行器地址, value : 执行器地址列表的下标
+        HashMap<String, Integer> lfuItemMap = jobLfuMap.get(jobId);
         if (lfuItemMap == null) {
             lfuItemMap = new HashMap<String, Integer>();
-            jobLfuMap.putIfAbsent(jobId, lfuItemMap);   // 避免重复覆盖
+            // 避免重复覆盖
+            jobLfuMap.putIfAbsent(jobId, lfuItemMap);
         }
 
         // put new
         for (String address: addressList) {
             if (!lfuItemMap.containsKey(address) || lfuItemMap.get(address) >1000000 ) {
-                lfuItemMap.put(address, new Random().nextInt(addressList.size()));  // 初始化时主动Random一次，缓解首次压力
+                // 初始化时主动Random一次，缓解首次压力
+                lfuItemMap.put(address, new Random().nextInt(addressList.size()));
             }
         }
-        // remove old
+
+        // remove old 缓存中有的地址，在最新的地址列表中已经失效了，所以需要在缓存中删除掉这些地址
         List<String> delKeys = new ArrayList<>();
         for (String existKey: lfuItemMap.keySet()) {
             if (!addressList.contains(existKey)) {
@@ -54,7 +65,7 @@ public class ExecutorRouteLFU extends ExecutorRouter {
             }
         }
 
-        // load least userd count address
+        // load least userd count address   按使用次数进行排序，拿到最少使用的那个地址
         List<Map.Entry<String, Integer>> lfuItemList = new ArrayList<Map.Entry<String, Integer>>(lfuItemMap.entrySet());
         Collections.sort(lfuItemList, new Comparator<Map.Entry<String, Integer>>() {
             @Override
@@ -63,6 +74,7 @@ public class ExecutorRouteLFU extends ExecutorRouter {
             }
         });
 
+        //使用一次之后，使用次数+1
         Map.Entry<String, Integer> addressItem = lfuItemList.get(0);
         String minAddress = addressItem.getKey();
         addressItem.setValue(addressItem.getValue() + 1);
@@ -75,5 +87,4 @@ public class ExecutorRouteLFU extends ExecutorRouter {
         String address = route(triggerParam.getJobId(), addressList);
         return new ReturnT<String>(address);
     }
-
 }

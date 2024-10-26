@@ -34,14 +34,17 @@ public class UserController {
     @Resource
     private XxlJobGroupDao xxlJobGroupDao;
 
+    /**
+     * 执行器管理
+     * @param model
+     * @return
+     */
     @RequestMapping
     @PermissionLimit(adminuser = true)
     public String index(Model model) {
-
         // 执行器列表
         List<XxlJobGroup> groupList = xxlJobGroupDao.findAll();
         model.addAttribute("groupList", groupList);
-
         return "user/user.index";
     }
 

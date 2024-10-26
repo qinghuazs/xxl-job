@@ -135,15 +135,18 @@ public class JobCompleteHelper {
 
 	// ---------------------- helper ----------------------
 
+	/**
+	 * 执行器回调接口，调度任务完成之后回调该接口，将执行结果信息返回给调度中心
+	 * @param callbackParamList
+	 * @return
+	 */
 	public ReturnT<String> callback(List<HandleCallbackParam> callbackParamList) {
-
 		callbackThreadPool.execute(new Runnable() {
 			@Override
 			public void run() {
 				for (HandleCallbackParam handleCallbackParam: callbackParamList) {
 					ReturnT<String> callbackResult = callback(handleCallbackParam);
-					logger.debug(">>>>>>>>> JobApiController.callback {}, handleCallbackParam={}, callbackResult={}",
-							(callbackResult.getCode()== ReturnT.SUCCESS_CODE?"success":"fail"), handleCallbackParam, callbackResult);
+					logger.debug(">>>>>>>>> JobApiController.callback {}, handleCallbackParam={}, callbackResult={}", (callbackResult.getCode()== ReturnT.SUCCESS_CODE?"success":"fail"), handleCallbackParam, callbackResult);
 				}
 			}
 		});
@@ -151,17 +154,22 @@ public class JobCompleteHelper {
 		return ReturnT.SUCCESS;
 	}
 
+	/**
+	 * 实际的回调结果处理逻辑
+	 * @param handleCallbackParam
+	 * @return
+	 */
 	private ReturnT<String> callback(HandleCallbackParam handleCallbackParam) {
-		// valid log item
+		//获取任务日志
 		XxlJobLog log = XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().load(handleCallbackParam.getLogId());
 		if (log == null) {
-			return new ReturnT<String>(ReturnT.FAIL_CODE, "log item not found.");
+			return new ReturnT<>(ReturnT.FAIL_CODE, "log item not found.");
 		}
 		if (log.getHandleCode() > 0) {
-			return new ReturnT<String>(ReturnT.FAIL_CODE, "log repeate callback.");     // avoid repeat callback, trigger child job etc
+			return new ReturnT<>(ReturnT.FAIL_CODE, "log repeate callback.");     // avoid repeat callback, trigger child job etc
 		}
 
-		// handle msg
+		//处理回调结果信息
 		StringBuffer handleMsg = new StringBuffer();
 		if (log.getHandleMsg()!=null) {
 			handleMsg.append(log.getHandleMsg()).append("<br>");
